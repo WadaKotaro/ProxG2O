@@ -1,0 +1,168 @@
+% プリアンブル
+%
+\documentclass[dvipdfmx]{jsarticle}
+\usepackage[dvipdfmx]{graphicx}
+\usepackage{bm}
+\usepackage[]{multicol}
+\usepackage{subcaption}
+\usepackage{enumerate}
+\pagestyle{plain}
+\renewcommand{\figurename}{Fig.}
+
+\begin{document}
+%----------------------------------------------------
+%=====================================%
+% タイトル等
+%=====================================%
+%\headding{
+%	近接点用g2o形式\\
+%	211T373T 和田 鼓太郎
+%}
+
+\title{近接点用g2o形式}
+
+\author{211T373T 和田 鼓太郎}
+
+%\maketitle
+
+%==========================================%
+% 本文
+%==========================================%
+
+近接点ポーズグラフ最適化用g2oファイル形式\\
+211T373T 和田 鼓太郎
+
+\section{VERTEX\_PROX}
+ロボットポーズ(設計変数)  と 観測した近接点のロボット座標(定数) を格納するノード．
+
+VERTEX\_PROX \verb|<|ID\verb|>| \verb|<|$p_x$\verb|>| \verb|<|$p_y$\verb|>| \verb|<|$p_\theta$\verb|>| \verb|<|n\verb|>| \{ \verb|<|$r_{x,i}$\verb|>| \verb|<|$r_{y,i}$\verb|>| \}
+
+\begin{tabbing}
+	\verb|<|ID\verb|>|　 	\= ノードID (0から順につける) \\
+	\verb|<|$p_x$\verb|>| 	\> ノードのワールド座標位置x [m] \\
+	\verb|<|$p_y$\verb|>| 	\> ノードのワールド座標位置y [m] \\
+	\verb|<|$p_\theta$\verb|>| \> ノードの姿勢$\theta$ [rad] \\
+	\verb|<|n\verb|>| 		\> 観測した近接点の数 \\
+	\verb|<|$r_{x,i}$\verb|>|	\> i個目の近接点のロボット座標位置x [m] \\
+	\verb|<|$r_{y,i}$\verb|>|	\> i個目の近接点のロボット座標位置y [m]
+\end{tabbing}
+
+\section{EDGE\_SE2}
+g2o既存のポーズ差で2つのノードを拘束するエッジ．
+
+\begin{eqnarray}
+	F_{ab} \left( \bm{p}_a, \bm{p}_b \right) &=& \left\| \bm{e}_{ab} \left( \bm{p}_a, \bm{p}_b \right) \right\|_{\bm{\Omega}}^2 \\
+	\bm{e}_{ab} \left( \bm{p}_a, \bm{p}_b \right) &=& \mathrm{toVec}\left( \bm{P}_a^{-1} \bm{P}_b \right) - \bm{z}
+\end{eqnarray}
+
+EDGE\_SE2 \verb|<|ID$_a$\verb|>| \verb|<|ID$_b$\verb|>| \verb|<|$z_x$\verb|>| \verb|<|$z_y$\verb|>| \verb|<|$z_\theta$\verb|>| \verb|<|$\Omega_{xx}$\verb|>| \verb|<|$\Omega_{xy}$\verb|>| \verb|<|$\Omega_{x\theta}$\verb|>| \verb|<|$\Omega_{yy}$\verb|>| \verb|<|$\Omega_{y\theta}$\verb|>| \verb|<|$\Omega_{\theta\theta}$\verb|>|
+
+\begin{tabbing}
+	\verb|<|ID$_a$\verb|>|　	　					\= $\bm{p}_a$のID \\
+	\verb|<|ID$_b$\verb|>|　 						\> $\bm{p}_b$のID \\
+	\verb|<|$z_x$\verb|>| 						\> ノード間の位置差x [m] \\
+	\verb|<|$z_y$\verb|>| 						\> ノード間の位置差y [m] \\
+	\verb|<|$z_\theta$\verb|>| 					\> ノード間の姿勢差$\theta$ [rad] \\
+	\verb|<|$\Omega_{xx}$\verb|>|				\> $\Omega_{xx}$ [m$^{-2}$] \\
+	\verb|<|$\Omega_{xy}$\verb|>|				\> $\Omega_{xy}, \Omega_{yx}$ [m$^{-2}$] \\
+	\verb|<|$\Omega_{x\theta}$\verb|>|			\> $\Omega_{x\theta}, \Omega_{\theta x}$ [m$^{-1}$rad$^{-1}$] \\
+	\verb|<|$\Omega_{yy}$\verb|>|				\> $\Omega_{yy}$ [m$^{-2}$] \\
+	\verb|<|$\Omega_{y\theta}$\verb|>|			\> $\Omega_{y\theta}, \Omega_{\theta y}$ [m$^{-1}$rad$^{-1}$] \\
+	\verb|<|$\Omega_{\theta\theta}$\verb|>|		\> $\Omega_{\theta\theta},$ [rad$^{-2}$]
+\end{tabbing}
+
+\clearpage
+
+\section{EDGE\_PROX}
+2つのノードを近接点の幾何学的特性を用いて拘束するエッジ．
+
+\begin{eqnarray}
+	F_{ab} \left( \bm{p}_a, \bm{p}_b \right) &=& \left\| \bm{e}_{ab} \left( \bm{p}_a, \bm{p}_b \right) \right\|_{\bm{\Omega}}^2 \\
+	\bm{e}_{ab} \left( \bm{p}_a, \bm{p}_b \right) &=& \left[ \begin{array}{ccccc}
+		l_{a,1} & l_{b,1} & l_{a,2} & \cdots & l_{b,N}
+	\end{array} \right]^T \\
+	l_{a,k} &=& \bm{\eta}_{a,i}^T \left( \bm{q}_{b,j} - \bm{q}_{a,i} \right) \nonumber \\
+	l_{b,k} &=& \bm{\eta}_{b,j}^T \left( \bm{q}_{a,i} - \bm{q}_{b,j} \right) \nonumber \\
+	\bm{\eta}_{a,i} &=& \frac{\bm{q}_{a,i} - \mathrm{Pos}\left( \bm{p}_a \right) }{\left\| \bm{q}_{a,i} - \mathrm{Pos}\left( \bm{p}_a \right) \right\|} \nonumber \\
+	\bm{q}_{a,i} &=& \bm{P}_a \bm{r}_{a,i} \nonumber \\
+	\bm{\Omega} &=& \left[ \begin{array}{ccccc} 
+		\Omega_{a,1} &&&& \\
+		& \Omega_{b,1} &&& \\
+		&& \Omega_{a,2} && \\
+		&&& \ddots & \\
+		&&&& \Omega_{b,n}
+	\end{array} \right] \nonumber
+\end{eqnarray}
+
+EDGE\_PROX \verb|<|ID$_a$\verb|>| \verb|<|ID$_b$\verb|>| \verb|<|n\verb|>| \{ \verb|<|$i$\verb|>| \verb|<|$j$\verb|>| \verb|<|$\Omega$\verb|>| \}
+
+\begin{tabbing}
+	\verb|<|ID$_a$\verb|>|　						\= $\bm{p}_a$のID \\
+	\verb|<|ID$_b$\verb|>|　 						\> $\bm{p}_b$のID \\
+	\verb|<|n\verb|>| 							\> 近接点ペアの数 \\
+	\verb|<|i\verb|>| \verb|<|j\verb|>|				\> $\bm{r}_{a,i}$と$\bm{r}_{b,j}$に近接点ペアを定義する \\
+	\verb|<|$\Omega$\verb|>|					\> $\Omega_{a,k}, \Omega_{b,k}$ [m$^{-2}$]
+\end{tabbing}
+
+\clearpage
+
+\section{VERTEX\_SWITCH\_PROX\_PAIR}
+近接点ポーズグラフ最適化を近接点ペアの誤検出にロバスト化させるために導入したノード．
+
+近接点ペアそれぞれにかけることで，対応した近接点ペアの重みを調節するスイッチ変数ノード($0\le s\le 1$)．
+
+VERTEX\_PROX\_PAIR\_WEIGHT \verb|<|ID\verb|>| \verb|<|n\verb|>|
+
+VERTEX\_PROX\_PAIR\_WEIGHT \verb|<|ID\verb|>| \verb|<|n\verb|>| \{ \verb|<|$s$\verb|>| \}
+
+\begin{tabbing}
+	\verb|<|ID\verb|>|　 	\= ノードID \\
+	\verb|<|n\verb|>| 		\> 対応させるエッジの近接点ペアの数 \\
+	\verb|<|s\verb|>| 		\> 各近接点ペアのスイッチ変数 ($0\le s\le 1$)
+\end{tabbing}
+
+前者の指定方法の場合，各$s$の値は$1$に初期化される．
+
+\section{EDGE\_SWITCH\_PROX}
+近接点ポーズグラフ最適化を近接点ペアの誤検出にロバスト化させるために導入したエッジ．
+
+2つのノードを近接点の幾何学的特性を用いて拘束するが，スイッチ変数を用いることでポーズグラフ最適化に障害となる近接点ペアの拘束力は低減させる．
+
+\begin{eqnarray}
+	F_{ab} \left( \bm{p}_a, \bm{p}_b, \bm{s}_{ab} \right) &=& \left\| \bm{e}_{ab} \left( \bm{p}_a, \bm{p}_b, \bm{s}_{ab} \right) \right\|_{\bm{\Omega}}^2 + \left\| \bm{1} - \bm{s}_{ab} \right\|_{\xi \bm{E}}^2 \\
+	\bm{e}_{ab} \left( \bm{p}_a, \bm{p}_b, \bm{s}_{ab} \right) &=& \left[ \begin{array}{ccccc}
+		s_{ab,1} l_{a,1} & s_{ab,1} l_{b,1} & s_{ab,2} l_{a,2} & \cdots & s_{ab,N} l_{b,N}
+	\end{array} \right]^T
+\end{eqnarray}
+
+EDGE\_PROX \verb|<|ID$_a$\verb|>| \verb|<|ID$_b$\verb|>| \verb|<|ID$_s$\verb|>| \verb|<|n\verb|>| \{ \verb|<|$i$\verb|>| \verb|<|$j$\verb|>| \verb|<|$\Omega$\verb|>| \}
+
+\begin{tabbing}
+	\verb|<|ID$_a$\verb|>|　						\= $\bm{p}_a$のID \\
+	\verb|<|ID$_b$\verb|>|　 						\> $\bm{p}_b$のID \\
+	\verb|<|ID$_s$\verb|>|　 						\> スイッチ変数ノードのID \\
+	\verb|<|n\verb|>| 							\> 近接点ペアの数 \\
+	\verb|<|i\verb|>| \verb|<|j\verb|>|				\> $\bm{r}_{a,i}$と$\bm{r}_{b,j}$に近接点ペアを定義する \\
+	\verb|<|$\Omega$\verb|>|					\> $\Omega_{a,k}, \Omega_{b,k}$ [m$^{-2}$]
+\end{tabbing}
+
+\section{PARAMS\_SPP\_WEIGHT}
+全てのEDGE\_SWITCH\_PROXのスイッチ変数$s$のペナルティ項の重さである$\xi$を決めるパラメータ．
+
+EDGE\_SWITCH\_PROXを宣言するより前に1つのみ宣言すること．
+
+PARAMS\_SPP\_WEIGHT \verb|<|ID\verb|>| \verb|<|$\xi$\verb|>|
+
+\begin{tabbing}
+	\verb|<|ID\verb|>|　 	\= パラメータID (今回の場合0) \\
+	\verb|<|$\xi$\verb|>| 	\> スイッチ変数$s$のペナルティ項の重さ
+\end{tabbing}
+
+
+%=========================================%
+
+%\begin{thebibliography}{99}
+	
+%\end{thebibliography}
+
+\end{document}
