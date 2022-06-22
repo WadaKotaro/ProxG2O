@@ -107,7 +107,7 @@ endif()
 # For building the CHOLMOD based solvers
 #option(G2O_USE_CHOLMOD "Build g2o with CHOLMOD support" ON)
 #find_package(Cholmod)
-#find_package(BLAS)
+find_package(BLAS)
 #find_package(LAPACK)
 #if (G2O_USE_CHOLMOD AND CHOLMOD_FOUND AND BLAS_FOUND AND LAPACK_FOUND)
 #  message(STATUS "Enable support for Cholmod")
